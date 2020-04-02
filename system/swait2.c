@@ -36,6 +36,24 @@ syscall	swait2(
 		return SYSERR;
 	}
 
+	if( sem1ptr->scount > 0 && sem2ptr->scount > 0 ) {
+		--(sem1ptr->scount);
+		--(sem2ptr->scount);
+	} else if( sem1ptr->scount <= 0 ) {
+		--(sem1ptr->scount);
+		prptr = &proctab[currpid];
+		prptr->prstate = PR_WAIT;	// Set state to waiting
+		prptr->prsem = sem1;		// Record semaphore ID
+		enqueue(currpid,sem1ptr->squeue);// Enqueue on semaphore
+		resched();			//   and reschedule
+	} else if( sem2ptr->scount <= 0 ) {
+		--(sem2ptr->scount);
+		prptr = &proctab[currpid];
+		prptr->prstate = PR_WAIT;	// Set state to waiting
+		prptr->prsem = sem2;		// Record semaphore ID
+		enqueue(currpid,sem2ptr->squeue);// Enqueue on semaphore
+		resched();			//   and reschedule
+	} 
 	// Check that sem1->cnt > 0 && sem2->cnt > 0 { // easy case
 	//   Do similar stuff to regular wait() call)
 	// } case 2 sem1->cnt > 0 && sem2->cnt <=0 {
